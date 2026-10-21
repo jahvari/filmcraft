@@ -2,7 +2,6 @@
 //!
 //! The declaration boundary alone does not load a driver or advertise codec support.
 
-#[allow(unsafe_code)] // Raw public OS media API declarations only (ADR 0001).
 mod ffi;
 
 #[cfg(test)]
