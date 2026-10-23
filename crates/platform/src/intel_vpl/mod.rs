@@ -5,5 +5,4 @@
 mod ffi;
 
 #[cfg(test)]
-#[allow(unsafe_code)] // FFI layout/union contract tests; every union read is justified locally.
 mod abi_tests;

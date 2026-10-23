@@ -48,6 +48,7 @@ fn versions_use_header_bit_encoding() {
 }
 
 #[test]
+#[allow(unsafe_code)] // Union member reads are justified by the local SAFETY comments.
 fn scalar_variants_zero_reserved_and_unused_payload_bytes() {
     for (variant, kind, value) in [(Variant::u32(u32::MAX), 5, u64::from(u32::MAX)), (Variant::u16(u16::MAX), 3, u64::from(u16::MAX))] {
         assert_eq!(variant.version.bits(), 0x0101);
@@ -59,6 +60,7 @@ fn scalar_variants_zero_reserved_and_unused_payload_bytes() {
 }
 
 #[test]
+#[allow(unsafe_code)] // Union member reads are justified by the local SAFETY comments.
 fn pointer_variant_preserves_exact_borrowed_pointer() {
     let mut marker = 41_u64;
     let pointer = std::ptr::from_mut(&mut marker).cast::<c_void>();
