@@ -2,7 +2,7 @@
  * Header-only ABI oracle; never loads a DLL or calls an MFX function.
  * Default mode: link only the C runtime, then print actual header layouts.
  * M0_SIGNATURES_ONLY: compile /c only; ten assignments must type-check with /WX.
- * Public headers pinned in acquisition-manifest.json; see README.md. */
+ * Public headers pinned in headers.json; see README.md. */
 #if !defined(_MSC_VER) || !defined(_M_X64) || !defined(_WIN64)
 #error This oracle is restricted to the actual Windows x64 MSVC target.
 #endif
