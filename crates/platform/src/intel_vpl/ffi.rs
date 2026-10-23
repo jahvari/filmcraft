@@ -178,3 +178,35 @@ pub(super) type CreateSession = unsafe extern "C" fn(Loader, u32, *mut Session) 
 pub(super) type QueryVersion = unsafe extern "C" fn(Session, *mut Version) -> Status;
 pub(super) type GetHandle = unsafe extern "C" fn(Session, i32, *mut *mut c_void) -> Status;
 pub(super) type Close = unsafe extern "C" fn(Session) -> Status;
+
+#[cfg(test)]
+mod tests {
+    use super::Variant;
+    use std::ffi::c_void;
+
+    #[test]
+    fn scalar_variants_zero_reserved_and_unused_payload_bytes() {
+        for (variant, kind, value) in [(Variant::u32(u32::MAX), 5, u64::from(u32::MAX)), (Variant::u16(u16::MAX), 3, u64::from(u16::MAX))] {
+            assert_eq!(variant.version.bits(), 0x0101);
+            assert_eq!(variant.reserved, [0, 0]);
+            assert_eq!(variant.kind, kind);
+            // SAFETY: both scalar constructors initialize the entire union through its u64 member.
+            assert_eq!(unsafe { variant.data.u64_value }, value);
+        }
+    }
+
+    #[test]
+    fn pointer_variant_preserves_exact_borrowed_pointer() {
+        let mut marker = 41_u64;
+        let pointer = std::ptr::from_mut(&mut marker).cast::<c_void>();
+        let variant = Variant::pointer(pointer);
+        assert_eq!(variant.version.bits(), 0x0101);
+        assert_eq!(variant.reserved, [0, 0]);
+        assert_eq!(variant.kind, 11);
+        // SAFETY: pointer() initializes this union member; reading it does not dereference the pointer.
+        assert_eq!(unsafe { variant.data.pointer }, pointer);
+        let null = Variant::pointer(std::ptr::null_mut());
+        // SAFETY: pointer() initializes this member, including when its value is null.
+        assert!(unsafe { null.data.pointer }.is_null());
+    }
+}
