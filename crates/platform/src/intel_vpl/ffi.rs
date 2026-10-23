@@ -66,10 +66,12 @@ pub(super) const HANDLE_D3D11_DEVICE: i32 = 3;
 pub(super) struct StructVersion(u16);
 
 impl StructVersion {
+    /// Pack the major and minor bytes using mfxStructVersion's header layout.
     pub(super) const fn new(major: u8, minor: u8) -> Self {
         Self(((major as u16) << 8) | minor as u16)
     }
 
+    /// Return the packed header word without interpreting it as a Rust enum.
     pub(super) const fn bits(self) -> u16 {
         self.0
     }
@@ -81,18 +83,22 @@ impl StructVersion {
 pub(super) struct Version(u32);
 
 impl Version {
+    /// Pack the major and minor words using mfxVersion's header layout.
     pub(super) const fn new(major: u16, minor: u16) -> Self {
         Self(((major as u32) << 16) | minor as u32)
     }
 
+    /// Return the complete packed API version for FFI comparisons.
     pub(super) const fn bits(self) -> u32 {
         self.0
     }
 
+    /// Extract the high word of the packed API version.
     pub(super) const fn major(self) -> u16 {
         (self.0 >> 16) as u16
     }
 
+    /// Extract the low word of the packed API version.
     pub(super) const fn minor(self) -> u16 {
         self.0 as u16
     }
@@ -126,10 +132,12 @@ pub(super) struct Variant {
 }
 
 impl Variant {
+    /// Initialize a U32 property and zero its reserved and unused payload bytes.
     pub(super) const fn u32(value: u32) -> Self {
         Self { version: StructVersion::new(1, 1), reserved: [0; 2], kind: 5, data: VariantData { u64_value: value as u64 } }
     }
 
+    /// Initialize a U16 property and zero its reserved and unused payload bytes.
     pub(super) const fn u16(value: u16) -> Self {
         Self { version: StructVersion::new(1, 1), reserved: [0; 2], kind: 3, data: VariantData { u64_value: value as u64 } }
     }
