@@ -29,9 +29,10 @@ pub trait VideoDecoder: Send {
     /// Sequence-only initialization required to reconstruct accepted native metadata in software
     /// after the replay log compacted past its in-band header. Backends that adopt configuration
     /// discrepancies retain this across reset and report their current accepted configuration.
-    /// Hybrid copies at most 64 KiB before releasing the native owner, then primes software before
-    /// replay and after software reset. Initialization must produce no pictures. Ordinary backends
-    /// return `None` and retain existing replay behavior.
+    /// Initialization must produce no pictures and implementations must limit it to 64 KiB.
+    /// Hybrid does not consume it in this proposal; backends must not accept adoptions whose
+    /// replay depends on it until that recovery integration lands. Ordinary backends return
+    /// `None` and retain existing replay behavior.
     fn software_replay_initialization(&self) -> Option<&[u8]> {
         None
     }
