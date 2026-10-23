@@ -75,11 +75,15 @@ fn expected(signal: &str) -> ColorInfo {
     }
 }
 
+// Counters and the decoder registry are process-wide. Hold this for every test below.
+static GLOBAL_STATS: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 #[test]
 #[ignore = "requires generated issue1678 fixtures and a Windows AV1 hardware decoder"]
 fn issue1678_generated_av1_initial_metadata() {
+    let _serial = GLOBAL_STATS.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let root = std::path::PathBuf::from(std::env::var_os("FILMCRAFT_ISSUE1678_FIXTURE_DIR").expect("fixture directory required"));
-    // Only this test binary/test thread should run: counters and decoder registry are global.
+    // GLOBAL_STATS serializes these tests, including their decoder registration and counter snapshots.
     filmcraft_codecs::register_video_decoder(filmcraft_platform::media_foundation_factory);
     filmcraft_codecs::hw::set_hardware_decoding(true);
     for signal in ["sdr", "pq", "hlg"] {
@@ -239,6 +243,7 @@ impl VideoDecoder for AdoptedAv1Replay {
 #[test]
 #[ignore = "requires generated issue1678 AV1 fixtures; uses a software-backed native stand-in"]
 fn issue1678_adopted_av1_header_survives_headerless_restart_and_native_failure() {
+    let _serial = GLOBAL_STATS.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let root = std::path::PathBuf::from(std::env::var_os("FILMCRAFT_ISSUE1678_FIXTURE_DIR").expect("fixture directory required"));
     for signal in ["sdr", "pq", "hlg"] {
         let (mut stream, _) = fixture_stream(&root, signal);
@@ -280,6 +285,7 @@ fn issue1678_adopted_av1_header_survives_headerless_restart_and_native_failure()
 #[test]
 #[ignore = "requires generated issue1678 fixtures and a Windows AV1 hardware decoder"]
 fn issue1678_real_native_failure_preserves_headerless_replay_and_reset() {
+    let _serial = GLOBAL_STATS.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let root = std::path::PathBuf::from(std::env::var_os("FILMCRAFT_ISSUE1678_FIXTURE_DIR").expect("fixture directory required"));
     filmcraft_codecs::hw::set_hardware_decoding(true);
     for signal in ["sdr", "pq", "hlg"] {
