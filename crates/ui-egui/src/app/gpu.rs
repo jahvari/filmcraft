@@ -89,3 +89,41 @@ impl FilmcraftApp {
         Some((id, size))
     }
 }
+
+#[cfg(test)]
+mod status_visibility_tests {
+    use super::FilmcraftApp;
+
+    #[test]
+    fn cpu_fallback_status_is_painted_and_respects_hidden_bar() {
+        let app = FilmcraftApp::new(filmcraft_engine::Session::default());
+        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_eframe(move |_| app);
+        h.run_steps(4);
+        let project = h.state().session.project.clone();
+        let playheads = h.state().session.state.playheads.clone();
+        h.state_mut().ui.show_status_bar = true;
+        let expected = tl!("GPU acceleration is unavailable; preview renders on the CPU").to_string();
+        // Simulate the message written by the compositor-initialization failure arm.
+        h.state_mut().ui.status = expected.clone();
+        h.step();
+        assert_eq!(h.state().ui.status, expected);
+        assert!(h.state().gpu.is_none());
+        assert!(std::sync::Arc::ptr_eq(&h.state().session.project, &project));
+        assert_eq!(h.state().session.state.playheads, playheads);
+
+        fn visible_status(shape: &egui::Shape, clip: egui::Rect, expected: &str) -> bool {
+            match shape {
+                egui::Shape::Text(text) if text.galley.text() == expected => {
+                    let visible = shape.visual_bounding_rect().intersect(clip);
+                    visible.is_positive() && visible.top() >= 780.0 && visible.bottom() <= 800.0
+                }
+                egui::Shape::Vec(shapes) => shapes.iter().any(|shape| visible_status(shape, clip, expected)),
+                _ => false,
+            }
+        }
+        assert!(h.output().shapes.iter().any(|s| visible_status(&s.shape, s.clip_rect, &expected)), "fallback status must paint inside the status bar");
+        h.state_mut().ui.show_status_bar = false;
+        h.step();
+        assert!(!h.output().shapes.iter().any(|s| visible_status(&s.shape, s.clip_rect, &expected)));
+    }
+}
